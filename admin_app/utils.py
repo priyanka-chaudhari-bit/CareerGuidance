@@ -50,14 +50,15 @@ def generate_admin_jwt(admin_user):
     access_token = generate_custom_jwt(admin_user, expiry_seconds=86400)
    
     refresh_token = generate_custom_jwt(admin_user, expiry_seconds=7 * 86400)
-    session_id = str(uuid.uuid4()) 
+    # session_id = str(uuid.uuid4()) 
 
-    cache.set(
-        f"admin_session_{session_id}",
-        {"access": access_token, "refresh": refresh_token, "user_id": admin_user.id},
-        timeout=7 * 86400
-    )
+    # cache.set(
+    #     f"admin_session_{session_id}",
+    #     {"access": access_token, "refresh": refresh_token, "user_id": admin_user.id},
+    #     timeout=7 * 86400
+    # )
 
-    cache.set(f"admin_refresh_{admin_user.id}", refresh_token, timeout=7 * 24 * 60 * 60)  # 7 days
+    # cache.set(f"admin_refresh_{admin_user.id}", refresh_token, timeout=7 * 24 * 60 * 60)  # 7 days
 
-    return session_id,access_token, refresh_token
+    # return session_id,access_token, refresh_token
+    return access_token, refresh_token

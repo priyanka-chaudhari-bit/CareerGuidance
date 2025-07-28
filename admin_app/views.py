@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import BasePermission, IsAuthenticated
 from .models import AdminUser,TestQuestion, TestOption, StudentAnswer, TestCategory, PsychometricOption, PsychometricQuestion, PsychometricAnswer, CollegeType, Course, College, CollegeCourse, CourseCutoff
-from .serializers import TestQuestionSerializer, StudentAnswerSerializer, TestCategorySerializer, PsychometricOptionSerializer, PsychometricQuestionSerializer, PsychometricAnswerSerializer, PsychometricQuestionCreateSerializer, CollegeSerializer, CollegeTypeSerializer, CourseSerializer,CollegeCourseSerializer, CourseCutoffSerializer
+from .serializers import TestQuestionSerializer, StudentAnswerSerializer, TestCategorySerializer, PsychometricOptionSerializer, PsychometricQuestionSerializer, PsychometricAnswerSerializer, PsychometricQuestionCreateSerializer, CollegeSerializer, CollegeTypeSerializer, CourseSerializer,CollegeCourseSerializer, CourseCutoffSerializer, TestQuestionAdminSerializer, TestAdminOptionSerializer,AdminPsychometricQuestionCreateSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from django.core.cache import cache
@@ -61,17 +61,20 @@ class AdminLoginView(APIView):
 
         if check_password(password, admin_user.password):  
             # refresh = RefreshToken.for_user(admin_user)
-            session_id, access_token, refresh_token = generate_admin_jwt(admin_user)
+            # session_id, access_token, refresh_token = generate_admin_jwt(admin_user)
+            access_token, refresh_token = generate_admin_jwt(admin_user)
             response = Response({
-                # "refresh_admin": refresh_token,
-                # "access_admin": access_token,
-                "user_type": "admin",
-                "session_id": session_id 
+                "refresh_admin": refresh_token,
+                "access_admin": access_token,
+                "admin_username":admin_user.username,
+                # "user_type": "admin",
+                # "session_id": session_id 
                 
             })
-            # response.set_cookie(key="refresh-admin", value=refresh_token, secure=False, samesite="Strict")
-            # response.set_cookie(key="access-admin", value=access_token, httponly=True, secure=False, samesite="Strict")
-            response.set_cookie(key="session_id", value=session_id, httponly=True, secure=False, samesite="Strict")
+            response.set_cookie(key="refresh-admin", value=refresh_token, secure=False, samesite="Strict")
+            response.set_cookie(key="access-admin", value=access_token, httponly=True, secure=False, samesite="Strict")
+            response.set_cookie(key="admin-username", value=admin_user.username, httponly=True, secure=False, samesite="Strict")
+            # response.set_cookie(key="session_id", value=session_id, httponly=True, secure=False, samesite="Strict")
             return response
         else:
             return Response({"error": "Invalid credentials"}, status=400)
@@ -81,41 +84,41 @@ class AdminLogoutView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
     def post(self, request):
-        # refresh_token = request.COOKIES.get("refresh-admin")
+        refresh_token = request.COOKIES.get("refresh-admin")
 
-        # if refresh_token:
-        #     try:
-        #         refresh = RefreshToken(refresh_token)
-        #         refresh.blacklist()  
-        #     except Exception:
-        #         pass
-        session_id = request.COOKIES.get("session_id")
-        print("session_id "+session_id)
+        if refresh_token:
+            try:
+                refresh = RefreshToken(refresh_token)
+                refresh.blacklist()  
+            except Exception:
+                pass
+        # session_id = request.COOKIES.get("session_id")
+        # print("session_id "+session_id)
 
-        if session_id:
-            redis_key = f"admin_session_{session_id}"
-            print("redis key "+redis_key)
-            session_data = cache.get(redis_key)
-            print("session_data ",session_data)
+        # if session_id:
+        #     redis_key = f"admin_session_{session_id}"
+        #     print("redis key "+redis_key)
+        #     session_data = cache.get(redis_key)
+        #     print("session_data ",session_data)
 
-            if session_data:
-                user_id = session_data.get("user_id")
-                print("user_id",user_id)
-                refresh_key = f"admin_refresh_{user_id}"
-                print("refresh_key"+refresh_key)
+        #     if session_data:
+        #         user_id = session_data.get("user_id")
+        #         print("user_id",user_id)
+        #         refresh_key = f"admin_refresh_{user_id}"
+        #         print("refresh_key"+refresh_key)
 
-                # Delete both session and refresh keys from Redis
-                cache.delete(redis_key)
-                print("redis_key deleted:",redis_key )
-                cache.delete(refresh_key)
-                print("refresh_key"+ refresh_key)
+        #         # Delete both session and refresh keys from Redis
+        #         cache.delete(redis_key)
+        #         print("redis_key deleted:",redis_key )
+        #         cache.delete(refresh_key)
+        #         print("refresh_key"+ refresh_key)
 
 
         response = Response({"message": "Logged out successfully!"}, status=status.HTTP_200_OK)
-        # response.delete_cookie("refresh_token")  
-        # response.delete_cookie("refresh-admin")  
-        # response.delete_cookie("access-admin")
-        response.delete_cookie("session_id")
+        response.delete_cookie("refresh_token")  
+        response.delete_cookie("refresh-admin")  
+        response.delete_cookie("access-admin")
+        # response.delete_cookie("session_id")
         print("session cookie deleted")
         return response
 
@@ -131,6 +134,34 @@ class CreateTestQuestionView(APIView):
             return Response({"message": "Question created successfully!", "question_id": question.id}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+class DeleteTestQuestionView(APIView):
+    authentication_classes = [CustomJWTAuthentication]
+
+    def delete(self, request, question_id):
+        try:
+            question = TestQuestion.objects.get(id=question_id)
+            question.delete()
+            return Response({"message": "Question deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+        except TestQuestion.DoesNotExist:
+            return Response({"error": "Question not found."}, status=status.HTTP_404_NOT_FOUND)
+
+class UpdateTestQuestionView(APIView):
+    authentication_classes = [CustomJWTAuthentication]
+
+    def put(self, request, question_id):
+        try:
+            question = TestQuestion.objects.get(id=question_id)
+        except TestQuestion.DoesNotExist:
+            return Response({"error": "Question not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = TestQuestionAdminSerializer(question, data=request.data, context={'request': request})
+        if serializer.is_valid():
+            
+            updated_question = serializer.save()
+            return Response({"message": "Question updated successfully."})
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 class TestQuestionListView(APIView):
     
     def get(self, request):
@@ -153,6 +184,39 @@ class TestCategoryView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class TestCategoryUpdateDeleteView(APIView):
+    authentication_classes = [CustomJWTAuthentication]
+
+    def put(self, request, pk):
+        
+        try:
+            category = TestCategory.objects.get(pk=pk)
+        except TestCategory.DoesNotExist:
+            return Response({"error": "Category not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = TestCategorySerializer(category, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+      
+        try:
+            category = TestCategory.objects.get(pk=pk)
+        except TestCategory.DoesNotExist:
+            return Response({"error": "Category not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        category.delete()
+        return Response({"message": "Category deleted"}, status=status.HTTP_204_NO_CONTENT)
+
+    
+class AdminTestQuestionListView(APIView):
+    def get(self, request):
+        questions = TestQuestion.objects.prefetch_related('options', 'category')
+        serializer = TestQuestionAdminSerializer(questions, many=True)
+        return Response(serializer.data)
     
 class GetQuestionsByCategoryView(APIView):
     def get(self, request):
@@ -263,6 +327,40 @@ class CreatePsychometricQuestionView(APIView):
             return Response(PsychometricQuestionSerializer(question, many=is_bulk).data, status=201)
         return Response(serializer.errors, status=400)
 
+class UpdatePsychometricQuestionView(APIView):
+    authentication_classes = [CustomJWTAuthentication]
+
+    def put(self, request, pk):
+        try:
+            question = PsychometricQuestion.objects.get(pk=pk)
+        except PsychometricQuestion.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=404)
+
+        serializer = AdminPsychometricQuestionCreateSerializer(question, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+
+            question.options.all().delete()
+
+            options_data = request.data.get('options', [])
+            for option in options_data:
+                PsychometricOption.objects.create(question=question, **option)
+
+            return Response(PsychometricQuestionSerializer(question).data)
+        return Response(serializer.errors, status=400)
+
+class DeletePsychometricQuestionView(APIView):
+    authentication_classes = [CustomJWTAuthentication]
+
+    def delete(self, request, pk):
+        try:
+            question = PsychometricQuestion.objects.get(pk=pk)
+        except PsychometricQuestion.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=404)
+
+        question.delete()
+        return Response({'detail': 'Deleted successfully'}, status=204)
+
 
 class PsychometricQuestionListView(APIView):
     # permission_classes = [IsAuthenticated]
@@ -318,6 +416,51 @@ class CollegeTypeAPIView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    # def put(self, request):
+    #     try:
+    #         college_type = CollegeType.objects.get(pk=request.data.get("id"))
+    #     except CollegeType.DoesNotExist:
+    #         return Response({"error": "CollegeType not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    #     serializer = CollegeTypeSerializer(college_type, data=request.data)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #         return Response(serializer.data)
+    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    # def delete(self, request):
+    #     try:
+    #         college_type = CollegeType.objects.get(pk=request.data.get("id"))
+    #     except CollegeType.DoesNotExist:
+    #         return Response({"error": "CollegeType not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    #     college_type.delete()
+    #     return Response({"message": "CollegeType deleted"}, status=status.HTTP_204_NO_CONTENT)
+
+class CollegeTypeDetailAPIView(APIView):
+    authentication_classes = [CustomJWTAuthentication]
+
+    def put(self, request, pk):
+        try:
+            college_type = CollegeType.objects.get(pk=pk)
+        except CollegeType.DoesNotExist:
+            return Response({"error": "CollegeType not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = CollegeTypeSerializer(college_type, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        try:
+            college_type = CollegeType.objects.get(pk=pk)
+        except CollegeType.DoesNotExist:
+            return Response({"error": "CollegeType not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        college_type.delete()
+        return Response({"message": "CollegeType deleted"}, status=status.HTTP_204_NO_CONTENT)
+
 
 
 class CourseAPIView(APIView):
@@ -334,6 +477,29 @@ class CourseAPIView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def put(self, request):
+        try:
+            course_id = request.query_params.get('id')
+            course = Course.objects.get(id=course_id)
+        except Course.DoesNotExist:
+            return Response({'error': 'Course not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = CourseSerializer(course, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request):
+        try:
+            course_id = request.query_params.get('id')
+            course = Course.objects.get(id=course_id)
+        except Course.DoesNotExist:
+            return Response({'error': 'Course not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        course.delete()
+        return Response({'message': 'Course deleted'}, status=status.HTTP_204_NO_CONTENT)
+
 
 
 class CollegeAPIView(APIView):
@@ -352,6 +518,32 @@ class CollegeAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class AdminCollegeAPIView(APIView):
+    authentication_classes = [CustomJWTAuthentication]
+    def get_object(self, pk):
+        return get_object_or_404(College, pk=pk)  
+    def put(self, request, pk):
+        data = request.data.copy()
+        if 'college_types_display' in data:
+            type_names = data['college_types_display']
+            type_ids = list(CollegeType.objects.filter(name__in=type_names).values_list('id', flat=True))
+            data['college_types'] = type_ids
+        college = self.get_object(pk)
+        if not college:
+            return Response({"error": "College not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = CollegeSerializer(college, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        college = self.get_object(pk)
+        if not college:
+            return Response({"error": "College not found"}, status=status.HTTP_404_NOT_FOUND)
+        college.delete()
+        return Response({"message": "College deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
 
 # class CollegeCourseAPIView(APIView):
 #     authentication_classes = [CustomJWTAuthentication]  
@@ -415,6 +607,53 @@ class CollegeCourseAPIView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def put(self, request):
+        college_name = request.query_params.get("college")
+        course_name = request.query_params.get("course")
+
+        if not college_name or not course_name:
+            return Response({"detail": "Both 'college' and 'course' query parameters are required."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            college = College.objects.get(name__iexact=college_name)
+            course = Course.objects.get(name__iexact=course_name)
+            college_course = CollegeCourse.objects.get(college=college, course=course)
+        except College.DoesNotExist:
+            return Response({"detail": "College not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Course.DoesNotExist:
+            return Response({"detail": "Course not found."}, status=status.HTTP_404_NOT_FOUND)
+        except CollegeCourse.DoesNotExist:
+            return Response({"detail": "CollegeCourse not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = CollegeCourseSerializer(college_course, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request):
+        college_name = request.query_params.get("college")
+        course_name = request.query_params.get("course")
+
+        if not college_name or not course_name:
+            return Response({"detail": "Both 'college' and 'course' query parameters are required."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            college = College.objects.get(name__iexact=college_name)
+            course = Course.objects.get(name__iexact=course_name)
+            college_course = CollegeCourse.objects.get(college=college, course=course)
+        except College.DoesNotExist:
+            return Response({"detail": "College not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Course.DoesNotExist:
+            return Response({"detail": "Course not found."}, status=status.HTTP_404_NOT_FOUND)
+        except CollegeCourse.DoesNotExist:
+            return Response({"detail": "CollegeCourse not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        college_course.delete()
+        return Response({"detail": "CollegeCourse deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+
 
 class CourseCutoffAPIView(APIView):
     authentication_classes = [CustomJWTAuthentication]  
@@ -443,3 +682,43 @@ class CourseCutoffAPIView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def put(self, request):
+        college_name = request.query_params.get("college")
+        course_name = request.query_params.get("course")
+        category = request.data.get("category")
+
+        if not all([college_name, course_name, category]):
+            return Response({"detail": "college, course, and category are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            college = College.objects.get(name__iexact=college_name)
+            course = Course.objects.get(name__iexact=course_name)
+            college_course = CollegeCourse.objects.get(college=college, course=course)
+            cutoff_instance = CourseCutoff.objects.get(college_course=college_course, category=category)
+        except (College.DoesNotExist, Course.DoesNotExist, CollegeCourse.DoesNotExist, CourseCutoff.DoesNotExist):
+            return Response({"detail": "Matching CourseCutoff entry not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = CourseCutoffSerializer(cutoff_instance, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request):
+        college_name = request.query_params.get("college")
+        course_name = request.query_params.get("course")
+        category = request.data.get("category")
+
+        if not all([college_name, course_name, category]):
+            return Response({"detail": "college, course, and category are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            college = College.objects.get(name__iexact=college_name)
+            course = Course.objects.get(name__iexact=course_name)
+            college_course = CollegeCourse.objects.get(college=college, course=course)
+            cutoff_instance = CourseCutoff.objects.get(college_course=college_course, category=category)
+            cutoff_instance.delete()
+            return Response({"detail": "CourseCutoff entry deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+        except (College.DoesNotExist, Course.DoesNotExist, CollegeCourse.DoesNotExist, CourseCutoff.DoesNotExist):
+            return Response({"detail": "Matching CourseCutoff entry not found."}, status=status.HTTP_404_NOT_FOUND)
+

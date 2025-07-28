@@ -150,3 +150,18 @@ class CollegeDetailSerializer(serializers.ModelSerializer):
     def get_courses(self, obj):
         courses = CollegeCourse.objects.filter(college=obj)
         return CourseSerializer(courses, many=True).data 
+
+class CollegeSerializer(serializers.ModelSerializer):
+    college_types = serializers.ListField(child=serializers.CharField(), write_only=True)
+    college_types_display = serializers.SerializerMethodField(read_only=True)
+    entrance_exams = serializers.ListField(child=serializers.CharField(), required=False)
+    courses = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = College
+        fields = [
+            'id', 'name', 'location', 'city', 'hostel_fees',
+            'ranking', 'scholarships', 'placements', 'college_types',
+            'recognized_by', 'about', 'established_year', 'top_recruiters',
+            'college_types_display', 'entrance_exams', 'average_package', 'institute_type','courses'
+        ]

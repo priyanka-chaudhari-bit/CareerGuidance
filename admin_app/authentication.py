@@ -11,22 +11,25 @@ from rest_framework.exceptions import AuthenticationFailed
 class CustomJWTAuthentication(BaseAuthentication):
     def authenticate(self, request):
         
-        # auth_header = request.headers.get('Authorization')
+       # # auth_header = request.headers.get('Authorization')
 
-        # if not auth_header:
+       # # if not auth_header:
+        # #     return None  
+        # session_id = request.COOKIES.get('session_id')
+        # print("session_id",session_id)
+        # if not session_id:
         #     return None  
-        session_id = request.COOKIES.get('session_id')
-        print("session_id",session_id)
-        if not session_id:
-            return None  # No session ID, skip authentication
+        # session_key = f"admin_session_{session_id}"
+        # session_data = cache.get(session_key)
 
-        session_key = f"admin_session_{session_id}"
-        session_data = cache.get(session_key)
+        # if not session_data:
+        #     raise AuthenticationFailed("Session expired or invalid")
 
-        if not session_data:
-            raise AuthenticationFailed("Session expired or invalid")
+        # access_token = session_data.get("access")
+        access_token = request.COOKIES.get('access-admin')
 
-        access_token = session_data.get("access")
+        if not access_token:
+            return None 
 
         try:
             
@@ -40,9 +43,6 @@ class CustomJWTAuthentication(BaseAuthentication):
             # payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
             # print(payload)
             payload = jwt.decode(access_token, settings.SECRET_KEY, algorithms=["HS256"])
-            user_id = payload.get('user_id')
-
-            
             user_id = payload.get('user_id')
             if not user_id:
                 raise AuthenticationFailed("Invalid token")

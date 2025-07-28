@@ -34,6 +34,80 @@ class TestOptionSerializer(serializers.ModelSerializer):
 #             TestOption.objects.create(question=test_question, **option_data)
 
 #         return test_question
+class TestAdminOptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TestOption
+        fields = ['id', 'text', 'is_correct']
+
+class TestQuestionAdminSerializer(serializers.ModelSerializer):
+    category = serializers.StringRelatedField()
+    options = TestAdminOptionSerializer(many=True)
+    category_name = serializers.CharField(write_only=True)  
+
+    class Meta:
+        model = TestQuestion
+        fields = ['id', 'category','category_name', 'text', 'options']
+    def validate_category(self, value):
+        if not TestCategory.objects.filter(name=value).exists():
+            raise serializers.ValidationError(f"Category '{value}' does not exist. Please choose a valid category.")
+        return value
+
+    def create(self, validated_data):
+        request_data = self.context['request'].data
+        options_data = request_data.get('options', [])
+
+        if not options_data:
+            raise serializers.ValidationError("Each question must have options.")
+        # Create the question
+
+        # Count the correct options
+        correct_options_count = sum(1 for option in options_data if option.get('is_correct', False))
+        
+        if correct_options_count != 1:
+            raise serializers.ValidationError("Each question must have exactly one correct option.")
+        
+        category_name = validated_data.pop('category_name') #category
+        category = TestCategory.objects.get(name=category_name)
+
+        question = TestQuestion.objects.create(category=category,**validated_data)
+
+        # Create options
+        for option_data in options_data:
+            TestOption.objects.create(question=question, **option_data)
+
+        return question
+    
+    def update(self, instance, validated_data):
+        request_data = self.context['request'].data
+        options_data = request_data.get('options', [])
+
+        if not options_data:
+            raise serializers.ValidationError("Each question must have options.")
+        
+        correct_options_count = sum(1 for option in options_data if option.get('is_correct', False))
+        
+        if correct_options_count != 1:
+            raise serializers.ValidationError("Each question must have exactly one correct option.")
+        
+        category_name = validated_data.pop('category_name')
+        try:
+            category = TestCategory.objects.get(name=category_name)
+        except TestCategory.DoesNotExist:
+            raise serializers.ValidationError(f"Category '{category_name}' does not exist.")
+        
+        instance.category = category
+        instance.text = validated_data.get('text', instance.text)
+        instance.save()
+
+       
+        instance.options.all().delete()
+
+        for option_data in options_data:
+            TestOption.objects.create(question=instance, **option_data)
+
+        return instance
+
+
 
 class TestQuestionSerializer(serializers.ModelSerializer):
     # category = serializers.CharField(source='category.name', read_only=True)  
@@ -76,6 +150,37 @@ class TestQuestionSerializer(serializers.ModelSerializer):
             TestOption.objects.create(question=question, **option_data)
 
         return question
+    
+    # def update(self, instance, validated_data):
+    #     request_data = self.context['request'].data
+    #     options_data = request_data.get('options', [])
+
+    #     if not options_data:
+    #         raise serializers.ValidationError("Each question must have options.")
+        
+    #     correct_options_count = sum(1 for option in options_data if option.get('is_correct', False))
+        
+    #     if correct_options_count != 1:
+    #         raise serializers.ValidationError("Each question must have exactly one correct option.")
+        
+    #     category_name = validated_data.pop('category')
+    #     try:
+    #         category = TestCategory.objects.get(name=category_name)
+    #     except TestCategory.DoesNotExist:
+    #         raise serializers.ValidationError(f"Category '{category_name}' does not exist.")
+        
+    #     instance.category = category
+    #     instance.text = validated_data.get('text', instance.text)
+    #     instance.save()
+
+       
+    #     instance.options.all().delete()
+
+    #     for option_data in options_data:
+    #         TestOption.objects.create(question=instance, **option_data)
+
+    #     return instance
+
         
 class TestCategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -106,6 +211,39 @@ class PsychometricQuestionCreateSerializer(serializers.ModelSerializer):
         if isinstance(self.validated_data, list):
             return self.create_many(self.validated_data)
         return super().save(**kwargs)
+    
+class AdminPsychometricQuestionCreateSerializer(serializers.ModelSerializer):
+    options = PsychometricOptionSerializer(many=True)
+
+    class Meta:
+        model = PsychometricQuestion
+        fields = ['id', 'question_text', 'dimension', 'options']
+    def create(self, validated_data):
+        options_data = validated_data.pop('options')
+        question = PsychometricQuestion.objects.create(**validated_data)
+        for option_data in options_data:
+            PsychometricOption.objects.create(question=question, **option_data)
+        return question
+    def create_many(self, validated_data_list):
+        return [self.create(item) for item in validated_data_list]
+
+    def save(self, **kwargs):
+        if isinstance(self.validated_data, list):
+            return self.create_many(self.validated_data)
+        return super().save(**kwargs)
+    def update(self, instance, validated_data):
+       
+        instance.question_text = validated_data.get('question_text', instance.question_text)
+        instance.dimension = validated_data.get('dimension', instance.dimension)
+        instance.save()
+
+        options_data = validated_data.get('options')
+        if options_data is not None:
+            instance.options.all().delete()
+            for option in options_data:
+                PsychometricOption.objects.create(question=instance, **option)
+
+        return instance
 
 class PsychometricQuestionSerializer(serializers.ModelSerializer):
     options = PsychometricOptionSerializer(many=True, read_only=True)
@@ -160,6 +298,7 @@ class CollegeSerializer(serializers.ModelSerializer):
     college_types = serializers.ListField(child=serializers.CharField(), write_only=True)
     college_types_display = serializers.SerializerMethodField(read_only=True)
     entrance_exams = serializers.ListField(child=serializers.CharField(), required=False)
+    courses = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = College
@@ -167,7 +306,7 @@ class CollegeSerializer(serializers.ModelSerializer):
             'id', 'name', 'location', 'city', 'hostel_fees',
             'ranking', 'scholarships', 'placements', 'college_types',
             'recognized_by', 'about', 'established_year', 'top_recruiters',
-            'college_types_display', 'entrance_exams', 'average_package', 'institute_type'
+            'college_types_display', 'entrance_exams', 'average_package', 'institute_type','courses'
         ]
 
     def create(self, validated_data):
@@ -179,6 +318,11 @@ class CollegeSerializer(serializers.ModelSerializer):
 
     def get_college_types_display(self, obj):
         return [ct.name for ct in obj.college_types.all()]
+    def get_courses(self, obj):
+        from .models import CollegeCourse  
+        return list(
+            CollegeCourse.objects.filter(college=obj).values_list("course__name", flat=True).distinct()
+        )
     
     # def to_representation(self, instance):
     #     rep = super().to_representation(instance)
@@ -243,4 +387,5 @@ class CourseCutoffSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'college_course': 'CollegeCourse mapping not found'})
 
         return CourseCutoff.objects.create(college_course=college_course, **validated_data)
+    
 

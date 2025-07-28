@@ -14,7 +14,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.utils.timezone import now
 from rest_framework_simplejwt.views import TokenObtainPairView
 from admin_app.models import TestQuestion, TestOption, StudentAnswer, TestCategory, PsychometricQuestion, PsychometricOption, PsychometricAnswer,College, PsychometricResult
-from admin_app.serializers import  StudentAnswerSerializer, TestCategorySerializer, PsychometricQuestionSerializer
+from admin_app.serializers import  StudentAnswerSerializer, TestCategorySerializer, PsychometricQuestionSerializer, CollegeSerializer
 from collections import defaultdict
 from django.db.models import Count
 # from .serializers import CustomTokenObtainPairSerializer
@@ -712,7 +712,10 @@ class CollegeRecommendationView(APIView):
 
         # ---- Get top fields ----
         top_fields = sorted(final_scores.items(), key=lambda x: x[1], reverse=True)[:3]
-        top_field_names = [f[0] for f in top_fields]
+        if not top_fields:
+            top_field_names = ["Engineering", "Management", "Computer Applications"]
+        else:
+            top_field_names = [f[0] for f in top_fields]
 
         personality_type = max(dimension_weights, key=dimension_weights.get) if dimension_weights else "Unknown"
         interests_list = sorted(psychometric_fields.items(), key=lambda x: x[1], reverse=True)
@@ -765,3 +768,18 @@ class CollegeDetailView(APIView):
 
         serializer = CollegeDetailSerializer(college)
         return Response(serializer.data)
+
+class CollegeAPIView(APIView):
+
+    def get(self, request):
+        colleges = College.objects.all()
+        serializer = CollegeSerializer(colleges, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = CollegeSerializer(data=request.data)
+        if serializer.is_valid():
+            college = serializer.save()
+            # college.college_types.set(request.data.get('college_types', []))
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

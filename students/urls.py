@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 # from .views import CustomTokenObtainPairView
 from rest_framework_simplejwt.views import TokenRefreshView
-from .views import UserRegistrationView, UserLoginView, LogoutView, UserProfileView, TestQuestionListView, SubmitAnswerView, StudentAPTIScoreView, CheckTestStatusView, DeletePreviousAnswersView, PsychometricQuestionListView, SubmitPsychometricAnswersView, CollegeRecommendationView, CollegeDetailView
+from .views import UserRegistrationView, UserLoginView, LogoutView, UserProfileView, TestQuestionListView, SubmitAnswerView, StudentAPTIScoreView, CheckTestStatusView, DeletePreviousAnswersView, PsychometricQuestionListView, SubmitPsychometricAnswersView, CollegeRecommendationView, CollegeDetailView, CollegeAPIView
 
 urlpatterns = [
     # path('admin/', admin.site.urls),
@@ -22,6 +22,7 @@ urlpatterns = [
     path('submit-psychometric-questions/', SubmitPsychometricAnswersView.as_view(), name='submit-psychometric-questions'),
     path('college-recommendation/', CollegeRecommendationView.as_view(), name='college-recommendation'),
     path('college-details/<int:college_id>', CollegeDetailView.as_view(), name='college-details'),
+    path('colleges/', CollegeAPIView.as_view(), name='college-details'),
     
     
 ]
