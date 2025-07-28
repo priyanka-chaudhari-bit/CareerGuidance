@@ -1,0 +1,48 @@
+.college-category-container {
+  padding: 1rem;
+  border: 1px solid #ccc;
+  max-width: 70rem;
+  margin: 2rem auto;
+}
+
+.college-category-form {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.college-category-form input {
+  flex: 1;
+  padding: 0.7rem;
+  font-size: 1rem;
+}
+
+.college-category-form button {
+  padding: 0.7rem 1.2rem;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.college-category-form button:hover {
+  background-color: #0056b3;
+}
+
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.category-card {
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f8f8f8;
+  text-align: center;
+  font-weight: 500;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}

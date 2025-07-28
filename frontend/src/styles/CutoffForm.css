@@ -1,0 +1,119 @@
+.cutoff-form {
+  padding: 1rem;
+  border: 1px solid #ccc;
+  max-width: 60rem;
+  margin: 2rem auto;
+  background-color: #fdfdfd;
+  border-radius: 10px;
+}
+
+.cutoff-form h3 {
+  margin-bottom: 1rem;
+}
+
+.cutoff-form form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+}
+
+.cutoff-form select,
+.cutoff-form input {
+  padding: 0.5rem;
+  font-size: 1rem;
+  flex: 1 1 200px;
+}
+
+.cutoff-form button {
+  padding: 0.6rem 1.2rem;
+  background-color: #007bff;
+  border: none;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.cutoff-form button:hover {
+  background-color: #0056b3;
+}
+.college-section {
+  margin-top: 40px;
+}
+
+.college-card {
+  border: 1px solid #ddd;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.course-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.course-card {
+  background-color: #e1f5fe;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid #03a9f4;
+  transition: 0.3s ease;
+}
+
+.course-card:hover {
+  background-color: #b3e5fc;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #fff !important;
+  padding: 1.5rem;
+  width: auto;
+  max-width: 500px;
+  min-width: 300px;
+  border-radius: 10px;
+  position: relative;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.modal-content table {
+  width: 100%;
+  max-width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.modal-content th,
+.modal-content td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: left;
+  word-wrap: break-word;
+}
+
+.modal-content h3 {
+  margin-top: 0;
+}
+.edit-category-cutoff{
+  display: flex;
+  flex-direction: row;
+  gap: '1rem';
+}

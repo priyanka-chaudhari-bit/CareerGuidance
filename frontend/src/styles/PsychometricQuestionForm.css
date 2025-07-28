@@ -1,0 +1,33 @@
+form input {
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+form button {
+  padding: 1rem 2rem;
+  background-color: #4caf50;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+form button:hover {
+  background-color: #45a049;
+}
+.textbox{
+    width: 30px;
+}
+.option-row {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 0.8rem;
+}
+
+.option-text {
+  flex: 0.4;
+  padding: 0.5rem;
+}
+
+.option-weight {
+  width: 60px;
+  padding: 0.5rem;
+}

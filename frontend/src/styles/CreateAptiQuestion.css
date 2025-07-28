@@ -1,0 +1,21 @@
+.apti-table {
+  border: 1px solid #ddd;
+  width: 100%;
+  border-collapse: collapse;
+  font-family: sans-serif;
+}
+
+.apti-table th,
+.apti-table td {
+  padding: 10px;
+  text-align: left;
+  border: 1px solid #ccc;
+}
+
+.apti-table th {
+  background-color: #f4f4f4;
+}
+
+.apti-table tbody tr:nth-child(even) {
+  background-color: #fafafa;
+}
