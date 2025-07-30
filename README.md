@@ -15,22 +15,27 @@ Students and parents often face difficulties when it comes to gathering detailed
   a)  Clone this Repository
   
   b)  Create and activate virtual environment
-    ```
+    
+  ```
     python -m venv venv
-    ```
-     or
-    ```
+  ```
+  or
+  ```
     py -m venv venv 
     venv\Scripts\activate
-    ```
+  ```
+
  c)  Install dependencies
+ 
     ```
     pip install -r requirements.txt 
     ```
+    
  d) Configure MySQL Database 
 
    Make sure MySQL server is running 
    Update your settings.py with your local DB credentials: 
+   
   ```
     DATABASES = { 
       'default': { 
