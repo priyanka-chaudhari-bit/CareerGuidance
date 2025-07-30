@@ -16,20 +16,20 @@ Students and parents often face difficulties when it comes to gathering detailed
   
   b)  Create and activate virtual environment
     
-  ```
+  ```bash
     python -m venv venv
   ```
   or
-  ```
+  ```bash
     py -m venv venv 
     venv\Scripts\activate
   ```
 
  c)  Install dependencies
  
-    ```
+  ```bash
     pip install -r requirements.txt 
-    ```
+  ```
     
  d) Configure MySQL Database 
 
@@ -56,28 +56,31 @@ Students and parents often face difficulties when it comes to gathering detailed
   Note: Make sure you've already created a database named career_guidance in MySQL before running migrations. 
 
   e) Run migrations 
-  ```
+  ```bash
   python manage.py makemigrations 
   python manage.py migrate
   ```
   f) Run the Django server 
-    ```
+  
+   ```bash
       python manage.py runserver
-    ```
+   ```
 
   ## Frontend (React) Setup
   
   a) Open a new terminal and go to the frontend directory:
-    ```
+   
+  ```bash
     cd frontend 
-    ```
+  ```
   b) Install frontend dependencies
-    ```
+  
+   ```bash
     npm install 
-    ```
+   ```
   c) Start the React app 
 
-  ```
+  ```bash
   npm start
   ```
 
