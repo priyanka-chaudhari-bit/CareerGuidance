@@ -21,7 +21,10 @@ Students and parents often face difficulties when it comes to gathering detailed
   ```
   or
   ```bash
-    py -m venv venv 
+    py -m venv venv
+  ```
+
+ ```bash
     venv\Scripts\activate
   ```
 
