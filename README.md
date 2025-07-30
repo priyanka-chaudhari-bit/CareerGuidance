@@ -15,18 +15,16 @@ Students and parents often face difficulties when it comes to gathering detailed
   a)  Clone this Repository
   
   b)  Create and activate virtual environment
-  
-    ```bash
+    ```
     python -m venv venv
     ```
      or
-    ```bash
+    ```
     py -m venv venv 
     venv\Scripts\activate
     ```
  c)  Install dependencies
- 
-    ```bash
+    ```
     pip install -r requirements.txt 
     ```
  d) Configure MySQL Database 
@@ -65,7 +63,7 @@ Students and parents often face difficulties when it comes to gathering detailed
   ## Frontend (React) Setup
   
   a) Open a new terminal and go to the frontend directory:
-    ```bash
+    ```
     cd frontend 
     ```
   b) Install frontend dependencies
